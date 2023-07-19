@@ -66,7 +66,7 @@ while True:
             choice2 = int(input("Enter your choice2 (0-50): "))
             if choice2 < 0 or choice2 > 50:
                 raise ValueError("Choice2 must be between 0 and 50.")
-            break  # Break the loop if valid input is provided
+            break
         except ValueError as e:
             print(f"Invalid input: {str(e)}")
     else:
@@ -79,7 +79,7 @@ while True:
                 choice, choice2 = 5, 2.5
             elif choice == "heck":
                 choice, choice2 = 0, 0
-            break  # Break the loop if valid input is provided
+            break
         else:
             print("Invalid choice.")
 
