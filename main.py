@@ -96,7 +96,7 @@ while True:
 url = 'http://www.rutra.live'
 while True:
     try:
-        num_requests = int(input("How many request do you want to make?"))
+        num_requests = int(input("How many request do you want to make? "))
         break
     except ValueError:
         print("Invalid input")
