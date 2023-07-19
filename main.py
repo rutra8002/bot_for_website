@@ -44,7 +44,7 @@ def simulate_traffic(url, num_requests, choice, choice2, randomness):
 
 def randomisation(num, randomness):
     num += 1
-    random_shit = (math.pi*math.e*math.sqrt(2)*math.tau/10) * randomness
+    random_shit = (math.pi*math.e*math.sqrt(2)*math.tau/10) * randomness/2
     lowest_num = num - random_shit
     if lowest_num < 0:
         lowest_num = 0
@@ -66,7 +66,7 @@ while True:
             choice2 = int(input("Enter your choice2 (0-50): "))
             if choice2 < 0 or choice2 > 50:
                 raise ValueError("Choice2 must be between 0 and 50.")
-            break
+            break  # Break the loop if valid input is provided
         except ValueError as e:
             print(f"Invalid input: {str(e)}")
     else:
@@ -79,7 +79,7 @@ while True:
                 choice, choice2 = 5, 2.5
             elif choice == "heck":
                 choice, choice2 = 0, 0
-            break
+            break  # Break the loop if valid input is provided
         else:
             print("Invalid choice.")
 
