@@ -181,3 +181,4 @@ if __name__ == "__main__":
         simulate_traffic(url, num_requests, choice, choice2, randomness, retry_on_failure=True)
     except KeyboardInterrupt:
         print("\nTraffic simulation terminated by the user.")
+
