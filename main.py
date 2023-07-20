@@ -98,7 +98,9 @@ def get_user_choices():
         if choice == "manual":
             try:
                 print(
-                    "First choice is the average time of staying on the website, and choice2 is the average time of disconnecting from the website")
+                    "First choice is the average time of staying on the website, and choice2 is the average time of "
+                    "disconnecting from the website")
+
                 choice = int(input("Enter your choice (0-50): "))
                 if choice < 0 or choice > 50:
                     raise ValueError("Choice must be between 0 and 50.")
@@ -181,4 +183,3 @@ if __name__ == "__main__":
         simulate_traffic(url, num_requests, choice, choice2, randomness, retry_on_failure=True)
     except KeyboardInterrupt:
         print("\nTraffic simulation terminated by the user.")
-
