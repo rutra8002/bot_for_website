@@ -142,9 +142,9 @@ def setup_logging():
     if not os.path.exists('logs'):
         os.makedirs('logs')
 
-    # Get the current date to use in the log file name
-    current_date = time.strftime("%Y-%m-%d")
-    log_file = f"logs/traffic_simulation_{current_date}.log"
+    # Get the current date and time to use in the log file name
+    current_datetime = time.strftime("%Y-%m-%d_%H-%M-%S")
+    log_file = f"logs/traffic_simulation_{current_datetime}.log"
 
     logging.basicConfig(filename=log_file, level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
@@ -152,7 +152,18 @@ def setup_logging():
 if __name__ == "__main__":
     setup_logging()
 
-    url = input("Enter the URL of the website to simulate traffic for: ")
+    while True:
+        url = input("Enter the URL of the website to simulate traffic for: ")
+        try:
+            # Validate the URL by making a request to it
+            response = requests.get(url, timeout=5)
+            if response.status_code == 200:
+                break
+            else:
+                print("Invalid URL. Please enter a valid URL.")
+        except requests.exceptions.RequestException:
+            print("Invalid URL. Please enter a valid URL.")
+
     while True:
         try:
             num_requests = int(input("How many requests do you want to make? "))
