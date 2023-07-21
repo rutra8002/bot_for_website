@@ -1,6 +1,5 @@
 import tkinter as tk
-from tkinter import ttk
-from tkinter import messagebox
+from tkinter import ttk, messagebox
 import requests
 import threading
 import queue
@@ -15,57 +14,59 @@ class TrafficSimulatorApp:
         self.root.geometry("400x500")
         self.style = ThemedStyle(self.root)
         self.style.set_theme("arc")  # Choose the theme (other options: "plastik", "arc", "adapta", etc.)
-        self.url_entry = ttk.Entry(self.root, width=40)
-        self.num_requests_entry = ttk.Entry(self.root)
-        self.retry_var = tk.IntVar()
-        self.retry_var.set(1)
-        self.speed_choice = tk.StringVar()
-        self.choice_entry = ttk.Spinbox(self.root, from_=0, to=50, state=tk.DISABLED)
-        self.choice2_entry = ttk.Spinbox(self.root, from_=0, to=50, state=tk.DISABLED)
-        self.randomness_var = tk.DoubleVar()
-        self.progress_bar = ttk.Progressbar(self.root, mode='determinate', length=300)
-        self.start_button = ttk.Button(self.root, text="Start Simulation", command=self.start_simulation)
+        self.setup_widgets()
         self.is_simulation_running = False
-        self.setup_gui()
 
-    def setup_gui(self):
+    def setup_widgets(self):
         label_url = ttk.Label(self.root, text="Enter the URL of the website to simulate traffic for:")
         label_url.pack(pady=10)
+        self.url_entry = ttk.Entry(self.root, width=40)
         self.url_entry.pack(pady=5)
 
         label_num_requests = ttk.Label(self.root, text="How many requests do you want to make?")
         label_num_requests.pack(pady=10)
+        self.num_requests_entry = ttk.Entry(self.root)
         self.num_requests_entry.pack(pady=5)
 
         label_speed = ttk.Label(self.root, text="Select the connection speed:")
         label_speed.pack(pady=10)
         speed_choices = ["slow", "medium", "fast", "heck", "manual"]
-        self.speed_choice.set(speed_choices[2])  # Default to "fast"
-        speed_combobox = ttk.Combobox(self.root, values=speed_choices, state="readonly")
+        self.speed_choice = tk.StringVar(value=speed_choices[2])  # Default to "fast"
+        speed_combobox = ttk.Combobox(self.root, values=speed_choices, state="readonly", textvariable=self.speed_choice)
         speed_combobox.pack(pady=5)
-        speed_combobox.set(speed_choices[2])  # Set default value
+        speed_combobox.bind("<<ComboboxSelected>>", self.speed_choice_changed)  # Bind the event
 
         label_choice = ttk.Label(self.root, text="Enter your choice (0-50):")
+        label_choice.pack(pady=5)
+        self.choice_var = tk.DoubleVar(value=2.5)  # Default choice value for fast mode
+        self.choice_entry = ttk.Spinbox(self.root, from_=0, to=50, increment=0.1, state=tk.DISABLED,
+                                        textvariable=self.choice_var)
         self.choice_entry.pack(pady=5)
 
         label_choice2 = ttk.Label(self.root, text="Enter your choice2 (0-50):")
+        label_choice2.pack(pady=5)
+        self.choice2_var = tk.DoubleVar(value=1)  # Default choice2 value for fast mode
+        self.choice2_entry = ttk.Spinbox(self.root, from_=0, to=50, increment=0.1, state=tk.DISABLED,
+                                         textvariable=self.choice2_var)
         self.choice2_entry.pack(pady=5)
 
         label_randomness = ttk.Label(self.root, text="How random would you like the connection time to be?")
         label_randomness.pack(pady=10)
+        self.randomness_var = tk.DoubleVar()
         self.randomness_scale = tk.Scale(self.root, from_=0, to=1, resolution=0.01, orient=tk.HORIZONTAL,
                                          length=200, variable=self.randomness_var, troughcolor="lightgray")
         self.randomness_scale.pack(pady=5)
 
-        retry_checkbox = ttk.Checkbutton(self.root, text="Retry on failure", variable=self.retry_var, onvalue=1, offvalue=0)
+        self.retry_var = tk.IntVar(value=1)
+        retry_checkbox = ttk.Checkbutton(self.root, text="Retry on failure", variable=self.retry_var, onvalue=1,
+                                         offvalue=0)
         retry_checkbox.pack(pady=5)
 
+        self.start_button = ttk.Button(self.root, text="Start Simulation", command=self.start_simulation)
         self.start_button.pack(pady=20)
 
+        self.progress_bar = ttk.Progressbar(self.root, mode='determinate', length=300)
         self.progress_bar.pack(pady=10)
-
-        # Bind the event for when the speed choice is changed
-        speed_combobox.bind("<<ComboboxSelected>>", self.speed_choice_changed)
 
     def lock_start_button(self):
         self.start_button.config(state=tk.DISABLED)
@@ -76,11 +77,11 @@ class TrafficSimulatorApp:
     def speed_choice_changed(self, event):
         speed_choice = self.speed_choice.get()
         if speed_choice == "manual":
+            self.choice_var.set(0)  # Reset the choice value to 0
+            self.choice2_var.set(0)  # Reset the choice2 value to 0
             self.choice_entry.config(state=tk.NORMAL)
             self.choice2_entry.config(state=tk.NORMAL)
         else:
-            self.choice_entry.delete(0, tk.END)  # Clear the entry fields
-            self.choice2_entry.delete(0, tk.END)
             self.choice_entry.config(state=tk.DISABLED)
             self.choice2_entry.config(state=tk.DISABLED)
 
@@ -135,11 +136,11 @@ class TrafficSimulatorApp:
         speed_choice = self.speed_choice.get()
         if speed_choice == "manual":
             try:
-                choice = int(self.choice_entry.get())
-                if choice < 0 or choice > 50:
+                choice = int(self.choice_var.get())
+                if not 0 <= choice <= 50:
                     raise ValueError("Choice must be between 0 and 50.")
-                choice2 = int(self.choice2_entry.get())
-                if choice2 < 0 or choice2 > 50:
+                choice2 = int(self.choice2_var.get())
+                if not 0 <= choice2 <= 50:
                     raise ValueError("Choice2 must be between 0 and 50.")
             except ValueError as e:
                 messagebox.showerror("Error", f"Invalid input: {str(e)}")
