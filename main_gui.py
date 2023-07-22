@@ -112,6 +112,7 @@ class TrafficSimulatorApp:
                 self.choice_var.set(0)
                 self.choice2_var.set(0)
 
+
     def update_progress_bar(self, progress):
         self.progress_bar['value'] = progress
         self.root.update_idletasks()
@@ -120,15 +121,7 @@ class TrafficSimulatorApp:
         messagebox.showerror("Error", message)
 
     def update_statistics(self):
-        if self.total_requests == 0:
-            success_rate = 0.0
-        else:
-            success_rate = (self.successful_requests / self.total_requests) * 100
-
         stats_text = f"Total Requests: {self.total_requests} | " \
-                     f"Successful Requests: {self.successful_requests} | " \
-                     f"Failed Requests: {self.failed_requests} | " \
-                     f"Success Rate: {success_rate:.2f}% | " \
                      f"Avg Response Time: {self.avg_response_time:.2f} sec"
 
         self.stats_label.config(text=stats_text)
@@ -142,17 +135,11 @@ class TrafficSimulatorApp:
                 try:
                     simulate_traffic(url, 1, choice, choice2, randomness, retry_on_failure=retry_on_failure,
                                      validate_proxies=validate_proxies)
-                    self.successful_requests += 1
                 except ConnectionError:
-                    self.failed_requests += 1
+                    pass  # Ignore failed requests for simplicity
                 total_duration += (time.time() - start_time)
                 self.total_requests += 1
                 self.avg_response_time = total_duration / self.total_requests if self.total_requests > 0 else 0.0
-
-                # Update progress bar and statistics in each iteration
-                progress = ((i + 1) / num_requests) * 100
-                self.queue.put(('progress', progress))
-                self.update_statistics()
 
             # Fill the progress bar completely
             self.queue.put(('progress', 100))
@@ -162,7 +149,7 @@ class TrafficSimulatorApp:
             self.queue.put(('error', str(e)))
 
         self.is_simulation_running = False
-        self.root.after(300, self.unlock_start_button)
+        self.root.after(300, self.unlock_start_button)  # Delay before unlocking start button
 
     def start_simulation(self):
         url = self.url_entry.get()
@@ -222,15 +209,7 @@ class TrafficSimulatorApp:
             total_duration += randomisation(choice2, randomness)
         avg_response_time = total_duration / (num_requests * 2) if num_requests > 0 else 0.0
 
-        if num_requests > 0:
-            success_rate = (self.successful_requests / num_requests) * 100
-        else:
-            success_rate = 0.0
-
         stats_text = f"Total Requests: {num_requests} | " \
-                     f"Successful Requests: {self.successful_requests} | " \
-                     f"Failed Requests: {self.failed_requests} | " \
-                     f"Success Rate: {success_rate:.2f}% | " \
                      f"Avg Response Time: {avg_response_time:.2f} sec"
 
         self.stats_label.config(text=stats_text)
@@ -243,7 +222,8 @@ class TrafficSimulatorApp:
         self.queue = queue.Queue()
         thread = threading.Thread(target=self.simulate_traffic_thread,
                                   args=(
-                                  url, num_requests, choice, choice2, randomness, retry_on_failure, validate_proxies))
+                                      url, num_requests, choice, choice2, randomness, retry_on_failure,
+                                      validate_proxies))
         thread.daemon = True
         thread.start()
 
