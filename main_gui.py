@@ -3,8 +3,9 @@ from tkinter import ttk, messagebox
 import requests
 import threading
 import queue
-from main import simulate_traffic, setup_logging
+from main import simulate_traffic, setup_logging, randomisation
 from ttkthemes import ThemedStyle
+import time
 
 
 class TrafficSimulatorApp:
@@ -16,6 +17,14 @@ class TrafficSimulatorApp:
         self.style.set_theme("arc")  # Choose the theme (other options: "plastik", "arc", "adapta", etc.)
         self.setup_widgets()
         self.is_simulation_running = False
+        self.successful_requests = 0
+        self.failed_requests = 0
+        self.total_requests = 0
+        self.avg_response_time = 0
+
+        # Create a label to display real-time statistics
+        self.stats_label = ttk.Label(self.root, text="")
+        self.stats_label.pack(pady=10)
 
     def setup_widgets(self):
         label_url = ttk.Label(self.root, text="Enter the URL of the website to simulate traffic for:")
@@ -38,14 +47,14 @@ class TrafficSimulatorApp:
 
         label_choice = ttk.Label(self.root, text="Enter your choice (0-50):")
         label_choice.pack(pady=5)
-        self.choice_var = tk.DoubleVar(value=2.5)  # Default choice value for fast mode
+        self.choice_var = tk.DoubleVar(value=5)  # Default choice value for fast mode
         self.choice_entry = ttk.Spinbox(self.root, from_=0, to=50, increment=0.1, state=tk.DISABLED,
                                         textvariable=self.choice_var)
         self.choice_entry.pack(pady=5)
 
         label_choice2 = ttk.Label(self.root, text="Enter your choice2 (0-50):")
         label_choice2.pack(pady=5)
-        self.choice2_var = tk.DoubleVar(value=1)  # Default choice2 value for fast mode
+        self.choice2_var = tk.DoubleVar(value=2.5)  # Default choice2 value for fast mode
         self.choice2_entry = ttk.Spinbox(self.root, from_=0, to=50, increment=0.1, state=tk.DISABLED,
                                          textvariable=self.choice2_var)
         self.choice2_entry.pack(pady=5)
@@ -62,6 +71,12 @@ class TrafficSimulatorApp:
                                          offvalue=0)
         retry_checkbox.pack(pady=5)
 
+        self.validate_proxies_var = tk.IntVar(value=0)
+        validate_proxies_checkbox = ttk.Checkbutton(self.root, text="Validate Proxies, (takes long time)",
+                                                    variable=self.validate_proxies_var,
+                                                    onvalue=1, offvalue=0)
+        validate_proxies_checkbox.pack(pady=5)
+
         self.start_button = ttk.Button(self.root, text="Start Simulation", command=self.start_simulation)
         self.start_button.pack(pady=20)
 
@@ -77,13 +92,25 @@ class TrafficSimulatorApp:
     def speed_choice_changed(self, event):
         speed_choice = self.speed_choice.get()
         if speed_choice == "manual":
-            self.choice_var.set(0)  # Reset the choice value to 0
-            self.choice2_var.set(0)  # Reset the choice2 value to 0
             self.choice_entry.config(state=tk.NORMAL)
             self.choice2_entry.config(state=tk.NORMAL)
         else:
             self.choice_entry.config(state=tk.DISABLED)
             self.choice2_entry.config(state=tk.DISABLED)
+
+            # Set default values for choice and choice2 based on the selected speed
+            if speed_choice == "slow":
+                self.choice_var.set(20)
+                self.choice2_var.set(10)
+            elif speed_choice == "medium":
+                self.choice_var.set(10)
+                self.choice2_var.set(5)
+            elif speed_choice == "fast":
+                self.choice_var.set(5)
+                self.choice2_var.set(2.5)
+            elif speed_choice == "heck":
+                self.choice_var.set(0)
+                self.choice2_var.set(0)
 
     def update_progress_bar(self, progress):
         self.progress_bar['value'] = progress
@@ -92,26 +119,56 @@ class TrafficSimulatorApp:
     def show_error_message(self, message):
         messagebox.showerror("Error", message)
 
-    def simulate_traffic_thread(self, url, num_requests, choice, choice2, randomness, retry_on_failure):
+    def update_statistics(self):
+        if self.total_requests == 0:
+            success_rate = 0.0
+        else:
+            success_rate = (self.successful_requests / self.total_requests) * 100
+
+        stats_text = f"Total Requests: {self.total_requests} | " \
+                     f"Successful Requests: {self.successful_requests} | " \
+                     f"Failed Requests: {self.failed_requests} | " \
+                     f"Success Rate: {success_rate:.2f}% | " \
+                     f"Avg Response Time: {self.avg_response_time:.2f} sec"
+
+        self.stats_label.config(text=stats_text)
+
+    def simulate_traffic_thread(self, url, num_requests, choice, choice2, randomness, retry_on_failure,
+                                validate_proxies):
         try:
+            total_duration = 0.0
             for i in range(num_requests):
-                progress = (i / num_requests) * 100
+                start_time = time.time()
+                try:
+                    simulate_traffic(url, 1, choice, choice2, randomness, retry_on_failure=retry_on_failure,
+                                     validate_proxies=validate_proxies)
+                    self.successful_requests += 1
+                except ConnectionError:
+                    self.failed_requests += 1
+                total_duration += (time.time() - start_time)
+                self.total_requests += 1
+                self.avg_response_time = total_duration / self.total_requests if self.total_requests > 0 else 0.0
+
+                # Update progress bar and statistics in each iteration
+                progress = ((i + 1) / num_requests) * 100
                 self.queue.put(('progress', progress))
-                simulate_traffic(url, 1, choice, choice2, randomness, retry_on_failure=bool(retry_on_failure))
+                self.update_statistics()
+
+            # Fill the progress bar completely
+            self.queue.put(('progress', 100))
+            self.update_statistics()
+
         except Exception as e:
             self.queue.put(('error', str(e)))
 
-        self.queue.put(('progress', 100))  # Ensure progress bar reaches 100%
         self.is_simulation_running = False
-        self.unlock_start_button()
+        self.root.after(300, self.unlock_start_button)
 
     def start_simulation(self):
-        if self.is_simulation_running:
-            return
-
         url = self.url_entry.get()
         num_requests = self.num_requests_entry.get()
         retry_on_failure = self.retry_var.get()
+        validate_proxies = self.validate_proxies_var.get()
 
         if not url.strip() or not num_requests.strip():
             messagebox.showerror("Error", "URL and number of requests are required.")
@@ -157,6 +214,27 @@ class TrafficSimulatorApp:
 
         randomness = self.randomness_var.get()
 
+        # Update statistics without actually starting the simulation
+        total_duration = 0.0
+        for i in range(num_requests):
+            start_time = time.time()
+            total_duration += randomisation(choice, randomness)
+            total_duration += randomisation(choice2, randomness)
+        avg_response_time = total_duration / (num_requests * 2) if num_requests > 0 else 0.0
+
+        if num_requests > 0:
+            success_rate = (self.successful_requests / num_requests) * 100
+        else:
+            success_rate = 0.0
+
+        stats_text = f"Total Requests: {num_requests} | " \
+                     f"Successful Requests: {self.successful_requests} | " \
+                     f"Failed Requests: {self.failed_requests} | " \
+                     f"Success Rate: {success_rate:.2f}% | " \
+                     f"Avg Response Time: {avg_response_time:.2f} sec"
+
+        self.stats_label.config(text=stats_text)
+
         setup_logging()
 
         self.is_simulation_running = True
@@ -164,7 +242,8 @@ class TrafficSimulatorApp:
 
         self.queue = queue.Queue()
         thread = threading.Thread(target=self.simulate_traffic_thread,
-                                  args=(url, num_requests, choice, choice2, randomness, retry_on_failure))
+                                  args=(
+                                  url, num_requests, choice, choice2, randomness, retry_on_failure, validate_proxies))
         thread.daemon = True
         thread.start()
 

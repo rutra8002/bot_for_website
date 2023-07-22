@@ -10,6 +10,13 @@ from tqdm import tqdm
 class ConnectionError(Exception):
     pass
 
+def is_proxy_valid(proxy):
+    # Function to validate if a proxy is working properly
+    try:
+        response = requests.get("https://www.google.com", proxies={"http": proxy, "https": proxy}, timeout=5)
+        return response.status_code == 200
+    except requests.exceptions.RequestException:
+        return False
 
 def connect_with_proxy(url, proxy):
     proxies = {"http": proxy, "https": proxy}
@@ -24,19 +31,24 @@ def connect_with_proxy(url, proxy):
         raise ConnectionError(f"An error occurred: {str(e)}")
 
 
-def simulate_traffic(url, num_requests, choice, choice2, randomness, retry_on_failure=True):
+def simulate_traffic(url, num_requests, choice, choice2, randomness, retry_on_failure=True, validate_proxies=True):
     times = 0
     successful_requests = 0
 
     with open('list.txt') as f:
         proxies = f.read().splitlines()
 
+    valid_proxies = proxies if not validate_proxies else [proxy for proxy in proxies if is_proxy_valid(proxy)]
+
+    if validate_proxies and not valid_proxies:
+        raise ConnectionError("No valid proxies found. Please check your proxy list or disable proxy validation.")
+
     for i in tqdm(range(num_requests), desc="Simulating Traffic", unit="request", bar_format="{l_bar}{bar}|"):
         if retry_on_failure:
             connected = False
             while not connected:
                 logging.info(f"Connected to website {successful_requests} times.")
-                proxy = random.choice(proxies)
+                proxy = random.choice(valid_proxies)
                 try:
                     connect_with_proxy(url, proxy)
                     times += 1
@@ -58,7 +70,7 @@ def simulate_traffic(url, num_requests, choice, choice2, randomness, retry_on_fa
                         break
         else:
             logging.info(f"Connected to website {successful_requests} times.")
-            proxy = random.choice(proxies)
+            proxy = random.choice(valid_proxies)
             try:
                 connect_with_proxy(url, proxy)
                 times += 1
