@@ -126,8 +126,7 @@ class TrafficSimulatorApp:
 
         self.stats_label.config(text=stats_text)
 
-    def simulate_traffic_thread(self, url, num_requests, choice, choice2, randomness, retry_on_failure,
-                                validate_proxies):
+    def simulate_traffic_thread(self, url, num_requests, choice, choice2, randomness, retry_on_failure, validate_proxies):
         try:
             total_duration = 0.0
             for i in range(num_requests):
@@ -141,17 +140,27 @@ class TrafficSimulatorApp:
                 self.total_requests += 1
                 self.avg_response_time = total_duration / self.total_requests if self.total_requests > 0 else 0.0
 
-            # Fill the progress bar completely
-            self.queue.put(('progress', 100))
-            self.update_statistics()
+                # Calculate progress based on the successful requests
+                progress = (self.total_requests / num_requests) * 100
+                # Convert progress to integer to ensure the progress bar reaches 100%
+                progress = int(progress)
+
+                # Update progress and statistics on the main thread using 'after'
+                self.root.after(1, self.update_progress_bar, progress)
+                self.root.after(1, self.update_statistics)
 
         except Exception as e:
             self.queue.put(('error', str(e)))
 
         self.is_simulation_running = False
-        self.root.after(300, self.unlock_start_button)  # Delay before unlocking start button
+        self.root.after(300, self.unlock_start_button)    # Delay before unlocking start button
 
     def start_simulation(self):
+        self.total_requests = 0
+        self.successful_requests = 0
+        self.failed_requests = 0
+        self.avg_response_time = 0.0
+
         url = self.url_entry.get()
         num_requests = self.num_requests_entry.get()
         retry_on_failure = self.retry_var.get()
