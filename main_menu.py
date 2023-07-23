@@ -38,11 +38,15 @@ class MainMenu:
 
     def open_gui(self):
         self.root.destroy()
-        subprocess.run([sys.executable, "main_gui.py"])
+        # Get the absolute path to the main_gui.exe file
+        main_gui_exe = os.path.abspath('main_gui.exe')
+        subprocess.run([main_gui_exe])
 
     def open_command(self):
         self.root.destroy()
-        subprocess.run([sys.executable, "main.py"])
+        # Get the absolute path to the main.exe file
+        main_exe = os.path.abspath('main.exe')
+        subprocess.run([main_exe])
 
 
 if __name__ == "__main__":
