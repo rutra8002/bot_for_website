@@ -13,7 +13,7 @@ class MainMenu:
         self.setup_widgets()
 
     def setup_widgets(self):
-        self.style = Style(theme="lumen")  # Choose the theme (other options: "flatly", "darkly", "united", etc.)
+        self.style = Style(theme="yeti")  # Choose the theme (other options: "flatly", "darkly", "united", etc.)
 
         label_heading = ttk.Label(self.root, text="Traffic Simulator Main Menu", font=("Helvetica", 16))
         label_heading.pack(pady=20)
@@ -28,7 +28,7 @@ class MainMenu:
         button_command.pack(pady=10)
 
     def toggle_dark_mode(self):
-        theme = "lumen" if not self.dark_mode.get() else "darkly"  # Toggle between flatly (light) and darkly (dark) themes
+        theme = "yeti" if not self.dark_mode.get() else "darkly"  # Toggle between flatly (light) and darkly (dark) themes
 
         # Create a new ttkbootstrap.Style object with the desired theme and set it on the root and child widgets
         self.root.style = Style(theme=theme)
