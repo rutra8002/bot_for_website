@@ -4,17 +4,16 @@ import requests
 import threading
 import queue
 from main import simulate_traffic, setup_logging, randomisation
-from ttkthemes import ThemedStyle
+from ttkbootstrap import Style
 import time
-
+from PIL import Image, ImageTk
 
 class TrafficSimulatorApp:
     def __init__(self, root):
         self.root = root
         self.root.title("Traffic Simulator")
-        self.root.geometry("400x500")
-        self.style = ThemedStyle(self.root)
-        self.style.set_theme("arc")  # Choose the theme (other options: "plastik", "arc", "adapta", etc.)
+        self.root.geometry("400x750")
+        self.style = Style(theme="darkly")  # Choose the theme (other options: "flatly", "darkly", "united", etc.)
         self.setup_widgets()
         self.is_simulation_running = False
         self.successful_requests = 0
@@ -27,6 +26,7 @@ class TrafficSimulatorApp:
         self.stats_label.pack(pady=10)
 
     def setup_widgets(self):
+        self.create_theme_change_button()
         label_url = ttk.Label(self.root, text="Enter the URL of the website to simulate traffic for:")
         label_url.pack(pady=10)
         self.url_entry = ttk.Entry(self.root, width=40)
@@ -62,8 +62,10 @@ class TrafficSimulatorApp:
         label_randomness = ttk.Label(self.root, text="How random would you like the connection time to be?")
         label_randomness.pack(pady=10)
         self.randomness_var = tk.DoubleVar()
-        self.randomness_scale = tk.Scale(self.root, from_=0, to=1, resolution=0.01, orient=tk.HORIZONTAL,
-                                         length=200, variable=self.randomness_var, troughcolor="lightgray")
+        self.randomness_scale = ttk.Scale(
+            self.root, from_=0, to=1, length=200, variable=self.randomness_var,
+            style="TScale"
+        )
         self.randomness_scale.pack(pady=5)
 
         self.retry_var = tk.IntVar(value=1)
@@ -82,6 +84,24 @@ class TrafficSimulatorApp:
 
         self.progress_bar = ttk.Progressbar(self.root, mode='determinate', length=300)
         self.progress_bar.pack(pady=10)
+
+    def change_theme(self):
+        selected_theme = self.theme_choice.get()
+        self.style.theme_use(selected_theme)
+
+    def create_theme_change_button(self):
+        label_theme = ttk.Label(self.root, text="Select theme:")
+        label_theme.pack(pady=10)
+
+        theme_choices = ["flatly", "darkly", "united", "yeti", "cosmo", "lumen", "sandstone", "superhero", "solar", "cyborg", "vapor", "journal", "litera", "minty", "pulse", "morph", "simplex", "cerculean"]
+        self.theme_choice = tk.StringVar(value="darkly")  # Default to "darkly"
+        theme_combobox = ttk.Combobox(
+            self.root, values=theme_choices, state="readonly", textvariable=self.theme_choice
+        )
+        theme_combobox.pack(pady=5)
+
+        theme_button = ttk.Button(self.root, text="Change Theme", command=self.change_theme)
+        theme_button.pack(pady=10)
 
     def lock_start_button(self):
         self.start_button.config(state=tk.DISABLED)
