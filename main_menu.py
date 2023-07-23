@@ -2,6 +2,7 @@ import tkinter as tk
 from tkinter import ttk
 import subprocess
 import sys
+import os
 from ttkbootstrap import Style
 
 class MainMenu:
