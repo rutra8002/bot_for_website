@@ -113,6 +113,8 @@ class TrafficSimulatorApp:
 
         self.start_button = ttk.Button(self.root, text="Start Simulation", command=self.start_simulation)
         self.start_button.pack(pady=20)
+        Tooltip(self.start_button, "Click to click this button")
+
 
         self.progress_bar = ttk.Progressbar(self.root, mode='determinate', length=300)
         self.progress_bar.pack(pady=10)
