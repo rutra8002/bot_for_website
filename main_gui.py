@@ -8,6 +8,31 @@ from ttkbootstrap import Style
 import time
 from PIL import Image, ImageTk
 
+class Tooltip:
+    def __init__(self, widget, text):
+        self.widget = widget
+        self.text = text
+        self.tooltip = None
+        self.widget.bind("<Enter>", self.show_tooltip)
+        self.widget.bind("<Leave>", self.hide_tooltip)
+
+    def show_tooltip(self, event=None):
+        x, y, _, _ = self.widget.bbox("insert")
+        x += self.widget.winfo_rootx() + 25
+        y += self.widget.winfo_rooty() + 25
+
+        self.tooltip = tk.Toplevel(self.widget)
+        self.tooltip.wm_overrideredirect(True)
+        self.tooltip.wm_geometry(f"+{x}+{y}")
+        label = tk.Label(self.tooltip, text=self.text, justify="left", background="#ffffe0", relief="solid", borderwidth=1, wraplength=180)
+        label.pack(ipadx=4)
+
+    def hide_tooltip(self, event=None):
+        if self.tooltip:
+            self.tooltip.destroy()
+            self.tooltip = None
+
+
 class TrafficSimulatorApp:
     def __init__(self, root):
         self.root = root
@@ -31,11 +56,13 @@ class TrafficSimulatorApp:
         label_url.pack(pady=10)
         self.url_entry = ttk.Entry(self.root, width=40)
         self.url_entry.pack(pady=5)
+        Tooltip(self.url_entry, "Enter the URL of the website you want to simulate traffic for.")
 
         label_num_requests = ttk.Label(self.root, text="How many requests do you want to make?")
         label_num_requests.pack(pady=10)
         self.num_requests_entry = ttk.Entry(self.root)
         self.num_requests_entry.pack(pady=5)
+        Tooltip(self.num_requests_entry, "Enter the number of requests you want to simulate.")
 
         label_speed = ttk.Label(self.root, text="Select the connection speed:")
         label_speed.pack(pady=10)
@@ -43,7 +70,7 @@ class TrafficSimulatorApp:
         self.speed_choice = tk.StringVar(value=speed_choices[2])  # Default to "fast"
         speed_combobox = ttk.Combobox(self.root, values=speed_choices, state="readonly", textvariable=self.speed_choice)
         speed_combobox.pack(pady=5)
-        speed_combobox.bind("<<ComboboxSelected>>", self.speed_choice_changed)  # Bind the event
+        Tooltip(speed_combobox, "Choose the connection speed for the simulation.\n'heck' and 'manual' options are for advanced users.")
 
         label_choice = ttk.Label(self.root, text="Enter your choice (0-50):")
         label_choice.pack(pady=5)
@@ -51,6 +78,7 @@ class TrafficSimulatorApp:
         self.choice_entry = ttk.Spinbox(self.root, from_=0, to=50, increment=0.1, state=tk.DISABLED,
                                         textvariable=self.choice_var)
         self.choice_entry.pack(pady=5)
+        Tooltip(self.choice_entry, "Enter the value for the first choice (0-50).\nOnly applicable for 'manual' connection speed.")
 
         label_choice2 = ttk.Label(self.root, text="Enter your choice2 (0-50):")
         label_choice2.pack(pady=5)
@@ -58,6 +86,7 @@ class TrafficSimulatorApp:
         self.choice2_entry = ttk.Spinbox(self.root, from_=0, to=50, increment=0.1, state=tk.DISABLED,
                                          textvariable=self.choice2_var)
         self.choice2_entry.pack(pady=5)
+        Tooltip(self.choice2_entry, "Enter the value for the second choice (0-50).\nOnly applicable for 'manual' connection speed.")
 
         label_randomness = ttk.Label(self.root, text="How random would you like the connection time to be?")
         label_randomness.pack(pady=10)
@@ -67,24 +96,26 @@ class TrafficSimulatorApp:
             style="TScale"
         )
         self.randomness_scale.pack(pady=5)
+        Tooltip(self.randomness_scale, "Adjust the randomness level for connection time.\n0 means no randomness, 1 means fully random.")
 
         self.retry_var = tk.IntVar(value=1)
         retry_checkbox = ttk.Checkbutton(self.root, text="Retry on failure", variable=self.retry_var, onvalue=1,
                                          offvalue=0)
         retry_checkbox.pack(pady=5)
+        Tooltip(retry_checkbox, "Enable this option to retry failed requests automatically.")
 
         self.validate_proxies_var = tk.IntVar(value=0)
         validate_proxies_checkbox = ttk.Checkbutton(self.root, text="Validate Proxies, (takes long time)",
                                                     variable=self.validate_proxies_var,
                                                     onvalue=1, offvalue=0)
         validate_proxies_checkbox.pack(pady=5)
+        Tooltip(validate_proxies_checkbox, "Enable this option to validate proxies before using them for requests.")
 
         self.start_button = ttk.Button(self.root, text="Start Simulation", command=self.start_simulation)
         self.start_button.pack(pady=20)
 
         self.progress_bar = ttk.Progressbar(self.root, mode='determinate', length=300)
         self.progress_bar.pack(pady=10)
-
     def change_theme(self):
         selected_theme = self.theme_choice.get()
         self.style.theme_use(selected_theme)
