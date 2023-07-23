@@ -52,19 +52,19 @@ class TrafficSimulatorApp:
 
     def setup_widgets(self):
         self.create_theme_change_button()
-        label_url = ttk.Label(self.root, text="Enter the URL of the website to simulate traffic for:")
+        label_url = ttk.Label(self.root, text="URL of website")
         label_url.pack(pady=10)
         self.url_entry = ttk.Entry(self.root, width=40)
         self.url_entry.pack(pady=5)
         Tooltip(self.url_entry, "Enter the URL of the website you want to simulate traffic for.")
 
-        label_num_requests = ttk.Label(self.root, text="How many requests do you want to make?")
+        label_num_requests = ttk.Label(self.root, text="Number of requests")
         label_num_requests.pack(pady=10)
         self.num_requests_entry = ttk.Entry(self.root)
         self.num_requests_entry.pack(pady=5)
         Tooltip(self.num_requests_entry, "Enter the number of requests you want to simulate.")
 
-        label_speed = ttk.Label(self.root, text="Select the connection speed:")
+        label_speed = ttk.Label(self.root, text="Connection speed:")
         label_speed.pack(pady=10)
         speed_choices = ["slow", "medium", "fast", "heck", "manual"]
         self.speed_choice = tk.StringVar(value=speed_choices[2])  # Default to "fast"
@@ -72,23 +72,23 @@ class TrafficSimulatorApp:
         speed_combobox.pack(pady=5)
         Tooltip(speed_combobox, "Choose the connection speed for the simulation.\n'heck' and 'manual' options are for advanced users.")
 
-        label_choice = ttk.Label(self.root, text="Enter your choice (0-50):")
+        label_choice = ttk.Label(self.root, text="Staying time:")
         label_choice.pack(pady=5)
         self.choice_var = tk.DoubleVar(value=5)  # Default choice value for fast mode
         self.choice_entry = ttk.Spinbox(self.root, from_=0, to=50, increment=0.1, state=tk.DISABLED,
                                         textvariable=self.choice_var)
         self.choice_entry.pack(pady=5)
-        Tooltip(self.choice_entry, "Enter the value for the first choice (0-50).\nOnly applicable for 'manual' connection speed.")
+        Tooltip(self.choice_entry, "Enter the value for time of staying on website (0-50 seconds).\nOnly applicable for 'manual' connection speed.")
 
-        label_choice2 = ttk.Label(self.root, text="Enter your choice2 (0-50):")
+        label_choice2 = ttk.Label(self.root, text="Disconnecting time:")
         label_choice2.pack(pady=5)
         self.choice2_var = tk.DoubleVar(value=2.5)  # Default choice2 value for fast mode
         self.choice2_entry = ttk.Spinbox(self.root, from_=0, to=50, increment=0.1, state=tk.DISABLED,
                                          textvariable=self.choice2_var)
         self.choice2_entry.pack(pady=5)
-        Tooltip(self.choice2_entry, "Enter the value for the second choice (0-50).\nOnly applicable for 'manual' connection speed.")
+        Tooltip(self.choice2_entry, "Enter the value for time of disconnecting from website (0-50 seconds).\nOnly applicable for 'manual' connection speed.")
 
-        label_randomness = ttk.Label(self.root, text="How random would you like the connection time to be?")
+        label_randomness = ttk.Label(self.root, text="Random level")
         label_randomness.pack(pady=10)
         self.randomness_var = tk.DoubleVar()
         self.randomness_scale = ttk.Scale(
