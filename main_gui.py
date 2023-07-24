@@ -3,10 +3,12 @@ from tkinter import ttk, messagebox
 import requests
 import threading
 import queue
-from main import simulate_traffic, setup_logging, randomisation
+from main import simulate_traffic, setup_logging, randomisation, connect_with_proxy
 from ttkbootstrap import Style
 import time
+import math
 from PIL import Image, ImageTk
+import tkinter.simpledialog as tkSimpleDialog
 
 class Tooltip:
     def __init__(self, widget, text):
@@ -110,6 +112,13 @@ class TrafficSimulatorApp:
                                                     onvalue=1, offvalue=0)
         validate_proxies_checkbox.pack(pady=5)
         Tooltip(validate_proxies_checkbox, "Enable this option to validate proxies before using them for requests.")
+        self.legit_mode_var = tk.IntVar(value=0)
+        legit_mode_checkbox = ttk.Checkbutton(self.root, text="Legit Mode (Open in browser)",
+                                              variable=self.legit_mode_var, onvalue=1,
+                                              offvalue=0)
+        legit_mode_checkbox.pack(pady=5)
+        Tooltip(legit_mode_checkbox,
+                "Enable this option to open the website in the default web browser instead of sending packets.")
 
         self.start_button = ttk.Button(self.root, text="Start Simulation", command=self.start_simulation)
         self.start_button.pack(pady=20)
@@ -179,14 +188,20 @@ class TrafficSimulatorApp:
 
         self.stats_label.config(text=stats_text)
 
-    def simulate_traffic_thread(self, url, num_requests, choice, choice2, randomness, retry_on_failure, validate_proxies):
+    def simulate_traffic_thread(self, url, num_requests, choice, choice2, randomness, retry_on_failure, validate_proxies, legit_mode):
         try:
             total_duration = 0.0
-            for i in range(num_requests):
+            i = 0  # Initialize loop counter
+            while i < num_requests:  # Modify loop condition
                 start_time = time.time()
                 try:
-                    simulate_traffic(url, 1, choice, choice2, randomness, retry_on_failure=retry_on_failure,
-                                     validate_proxies=validate_proxies)
+                    # Call simulate_traffic only when legit_mode is False
+                    if not legit_mode:
+                        simulate_traffic(url, 1, choice, choice2, randomness, retry_on_failure=retry_on_failure,
+                                         validate_proxies=validate_proxies, legit_mode=legit_mode)
+                    else:
+                        connect_with_proxy(url, "", legit_mode=True)  # Call connect_with_proxy in legit_mode
+                    i += 1  # Increment loop counter
                 except ConnectionError:
                     pass  # Ignore failed requests for simplicity
                 total_duration += (time.time() - start_time)
@@ -194,8 +209,8 @@ class TrafficSimulatorApp:
                 self.avg_response_time = total_duration / self.total_requests if self.total_requests > 0 else 0.0
 
                 # Calculate progress based on the successful requests
-                progress = (self.total_requests / num_requests) * 100
-                # Convert progress to integer to ensure the progress bar reaches 100%
+                progress = (i / num_requests) * 100
+                # Convert progress to an integer to ensure the progress bar reaches 100%
                 progress = int(progress)
 
                 # Update progress and statistics on the main thread using 'after'
@@ -281,11 +296,12 @@ class TrafficSimulatorApp:
         self.is_simulation_running = True
         self.lock_start_button()
 
+        legit_mode = self.legit_mode_var.get()
         self.queue = queue.Queue()
         thread = threading.Thread(target=self.simulate_traffic_thread,
                                   args=(
                                       url, num_requests, choice, choice2, randomness, retry_on_failure,
-                                      validate_proxies))
+                                      validate_proxies, legit_mode))
         thread.daemon = True
         thread.start()
 

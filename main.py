@@ -5,7 +5,7 @@ import requests
 import math
 import logging
 from tqdm import tqdm
-
+import webbrowser
 
 class ConnectionError(Exception):
     pass
@@ -18,12 +18,36 @@ def is_proxy_valid(proxy):
     except requests.exceptions.RequestException:
         return False
 
-def connect_with_proxy(url, proxy):
+def connect_with_proxy(url, proxy, legit_mode=False, speed_choice=None):
     proxies = {"http": proxy, "https": proxy}
     try:
-        response = requests.get(url, proxies=proxies, timeout=5)
-        logging.info(f"Connected to the website using proxy: {proxy}")
-        logging.info(f"Response status code: {response.status_code}")
+        if not legit_mode:
+            response = requests.get(url, proxies=proxies, timeout=5)
+            logging.info(f"Connected to the website using proxy: {proxy}")
+            logging.info(f"Response status code: {response.status_code}")
+        else:
+            # Add a delay before opening the website in legit_mode
+            if speed_choice == "slow":
+                delay_before_opening = randomisation(20, 0.5)
+            elif speed_choice == "medium":
+                delay_before_opening = randomisation(10, 0.5)
+            elif speed_choice == "fast":
+                delay_before_opening = randomisation(5, 0.5)
+            elif speed_choice == "heck":
+                delay_before_opening = randomisation(0, 0.5)
+            elif speed_choice == "manual":
+                # You can use self.choice_var and self.choice2_var from the GUI
+                # or hardcode the values based on the GUI input
+                choice, choice2 = 5, 2.5
+                delay_before_opening = randomisation(choice, 0.5)
+            else:
+                # Default to a delay of 5 seconds for unknown speed choices
+                delay_before_opening = randomisation(5, 0.5)
+
+            time.sleep(delay_before_opening)
+            webbrowser.open(url)  # Open the website in the default web browser
+            logging.info(f"Opened the website in the default web browser using proxy: {proxy}")
+
         return True
     except requests.exceptions.RequestException as e:
         raise ConnectionError(f"Failed to connect to the website using proxy: {proxy}: {str(e)}")
@@ -31,7 +55,7 @@ def connect_with_proxy(url, proxy):
         raise ConnectionError(f"An error occurred: {str(e)}")
 
 
-def simulate_traffic(url, num_requests, choice, choice2, randomness, retry_on_failure=True, validate_proxies=True):
+def simulate_traffic(url, num_requests, choice, choice2, randomness, retry_on_failure=True, validate_proxies=False, legit_mode=False):
     times = 0
     successful_requests = 0
 
@@ -50,7 +74,7 @@ def simulate_traffic(url, num_requests, choice, choice2, randomness, retry_on_fa
                 logging.info(f"Connected to website {successful_requests} times.")
                 proxy = random.choice(valid_proxies)
                 try:
-                    connect_with_proxy(url, proxy)
+                    connect_with_proxy(url, proxy, legit_mode)
                     times += 1
                     successful_requests += 1
                     connected = True
@@ -72,7 +96,7 @@ def simulate_traffic(url, num_requests, choice, choice2, randomness, retry_on_fa
             logging.info(f"Connected to website {successful_requests} times.")
             proxy = random.choice(valid_proxies)
             try:
-                connect_with_proxy(url, proxy)
+                connect_with_proxy(url, proxy, legit_mode)
                 times += 1
                 successful_requests += 1
 
@@ -162,21 +186,8 @@ def setup_logging():
 
     logging.basicConfig(filename=log_file, level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
-
-if __name__ == "__main__":
-    setup_logging()
-
-    while True:
-        url = input("Enter the URL of the website to simulate traffic for: ")
-        try:
-            # Validate the URL by making a request to it
-            response = requests.get(url, timeout=5)
-            if response.status_code == 200:
-                break
-            else:
-                print("Invalid URL. Please enter a valid URL.")
-        except requests.exceptions.RequestException:
-            print("Invalid URL. Please enter a valid URL.")
+def get_user_input():
+    url = input("Enter the URL of the website to simulate traffic for: ")
 
     while True:
         try:
@@ -188,10 +199,14 @@ if __name__ == "__main__":
         except ValueError:
             print("Invalid input. Please enter a valid integer value.")
 
+    legit_mode = input("Do you want to use legit mode? (y/n): ").lower().startswith("y")
+
+    return url, num_requests, legit_mode
+
+if __name__ == "__main__":
+    url, num_requests, legit_mode = get_user_input()
     choice, choice2 = get_user_choices()
     randomness = get_randomness()
 
-    try:
-        simulate_traffic(url, num_requests, choice, choice2, randomness, retry_on_failure=True)
-    except KeyboardInterrupt:
-        print("\nTraffic simulation terminated by the user.")
+    # Call the simulate_traffic function with the provided legit_mode flag
+    simulate_traffic(url, num_requests, choice, choice2, randomness, retry_on_failure=True, legit_mode=legit_mode)
