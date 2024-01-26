@@ -1,7 +1,7 @@
 # Traffic simulator
 ## It is a script, which simulates traffic for website.
-### It can be useful for increasing position of website in search engines.
-#### Recommended randomisation is 0.2-0.5 . Using higher randomisation will result in very random outputs, which is very unexpected lol.
+### It can be useful for increasing position of website in search engines. (xD)
+#### Recommended randomisation is 0.2-0.5.
 
 ## Example look of it in one of about 20 themes.
 
